@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ממלכת הכפל 🏰</title>
+    <style>
+        :root { 
+            --primary: #ff6b6b; 
+            --secondary: #4ecdc4; 
+            --accent: #feca57;
+            --bg: #f0f8ff; 
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--bg); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 20px;
+        }
+        
+        .screen { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 25px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1); 
+            text-align: center; 
+            width: 100%;
+            max-width: 380px; 
+            display: none; 
+            box-sizing: border-box;
+        }
+        
+        .active { 
+            display: block; 
+            animation: fadeIn 0.4s ease-out; 
+        }
+        
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        h1 { color: var(--primary); margin-bottom: 25px; font-size: 2rem; }
+        h3 { color: #555; margin-bottom: 15px; }
+
+        button { 
+            background-color: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 14px 20px; 
+            font-size: 1.1rem; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            margin: 8px 0; 
+            transition: all 0.2s; 
+            width: 100%;
+            font-weight: bold;
+        }
+        
+        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,107,107,0.3); }
+        button:active { transform: translateY(0); }
+
+        .secondary-btn { background-color: var(--secondary); }
+        .secondary-btn:hover { box-shadow: 0 5px 15px rgba(78,205,196,0.3); }
+        
+        .home-btn { background: #95a5a6; width: auto; font-size: 0.9rem; padding: 10px 15px; margin-top: 15px; }
+        
+        .tab-container { display: flex; gap: 5px; margin-bottom: 20px; }
+        .tab-btn { padding: 8px; font-size: 0.85rem; }
+
+        input[type="text"], input[type="number"] { 
+            width: 100%; 
+            padding: 12px; 
+            font-size: 1.2rem; 
+            border: 2px solid #eee; 
+            border-radius: 12px; 
+            margin: 10px 0; 
+            text-align: center; 
+            box-sizing: border-box;
+            outline: none;
+        }
+        
+        input:focus { border-color: var(--secondary); }
+
+        .question { font-size: 3.5rem; margin: 20px 0; color: #2d3436; font-weight: bold; }
+        
+        .score-row { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 10px; 
+            border-bottom: 1px solid #f0f0f0; 
+            align-items: center;
+        }
+
+        .settings-row { margin: 25px 0; text-align: right; }
+        label { display: block; margin-bottom: 10px; font-weight: bold; color: #444; }
+        
+        input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <div id="screen-home" class="screen active">
+        <h1>ממלכת הכפל 🏰</h1>
+        <button onclick="showScreen('screen-name')">🎮 שחק עכשיו</button>
+        <button class="secondary-btn" onclick="showLeaderboard()">🏆 טבלת שיאים</button>
+        <button class="secondary-btn" onclick="showScreen('screen-settings')">⚙️ הגדרות</button>
+    </div>
+
+    <div id="screen-name" class="screen">
+        <h1>מי הגיבור? ⚔️</h1>
+        <h3>הכנס את שמך:</h3>
+        <input type="text" id="playerNameInput" placeholder="השם שלך..." maxlength="12">
+        <button onclick="saveNameAndStart()">המשך לבחירת רמה</button>
+        <button class="home-btn" onclick="showScreen('screen-home')">חזור לתפריט</button>
+    </div>
+
+    <div id="screen-levels" class="screen">
+        <h1>בחר רמת קושי</h1>
+        <button onclick="startGame(5, 'easy')">קל (עד 5)</button>
+        <button onclick="startGame(10, 'medium')">בינוני (עד 10)</button>
+        <button onclick="startGame(20, 'hard')">קשה (עד 20)</button>
+        <button class="home-btn" onclick="showScreen('screen-home')">חזור</button>
+    </div>
+
+    <div id="screen-game" class="screen">
+        <div style="display:flex; justify-content: space-between; align-items: center;">
+            <div id="gameScore" style="font-size: 1.2rem; font-weight: bold; color: var(--secondary);">ניקוד: 0</div>
+            <button class="home-btn" onclick="confirmExit()" style="margin:0; width: 40px; padding: 5px;">🏠</button>
+        </div>
+        <div id="questionDisplay" class="question"></div>
+        <input type="number" id="gameInput" placeholder="?">
+        <button onclick="checkAnswer()">בדוק תשובה</button>
+        <div id="gameMessage" style="height:30px; margin-top:10px; font-weight:bold; font-size: 1.1rem;"></div>
+    </div>
+
+    <div id="screen-settings" class="screen">
+        <h1>הגדרות ⚙️</h1>
+        <div class="settings-row">
+            <label>עוצמת צלילים:</label>
+            <input type="range" id="volumeControl" min="0" max="1" step="0.1" value="0.5">
+        </div>
+        <button onclick="showScreen('screen-home')">שמור וחזור</button>
+    </div>
+
+    <div id="screen-leaderboard" class="screen">
+        <h1>היכל התהילה 🏆</h1>
+        
+        <div class="tab-container">
+            <button class="secondary-btn tab-btn" onclick="loadLeaderboardByDiff('easy')">קל</button>
+            <button class="secondary-btn tab-btn" onclick="loadLeaderboardByDiff('medium')">בינוני</button>
+            <button class="secondary-btn tab-btn" onclick="loadLeaderboardByDiff('hard')">קשה</button>
+        </div>
+
+        <div id="leaderboardContent" style="min-height: 200px;">
+            </div>
+        
+        <button class="home-btn" onclick="showScreen('screen-home')">חזור לבית</button>
+    </div>
+
+    <script>
+        // משתנים גלובליים
+        let score = 0;
+        let currentAnswer = 0;
+        let maxRange = 10;
+        let diffLabel = 'medium';
+        let playerName = "שחקן";
+        
+        // טעינת צלילים
+        const soundCorrect = new Audio('correct.mp3');
+        const soundWrong = new Audio('wrong.mp3');
+
+        // ניווט בין מסכים
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // שמירת שם
+        function saveNameAndStart() {
+            const name = document.getElementById('playerNameInput').value.trim();
+            if (name.length > 0) {
+                playerName = name;
+                showScreen('screen-levels');
+            } else {
+                alert("אל תשכח להכניס שם!");
+            }
+        }
+
+        // תחילת משחק
+        function startGame(range, difficulty) {
+            maxRange = range;
+            diffLabel = difficulty;
+            score = 0;
+            document.getElementById('gameScore').innerText = "ניקוד: 0";
+            document.getElementById('gameMessage').innerText = "";
+            showScreen('screen-game');
+            generateQuestion();
+        }
+
+        // הגרלת שאלה
+        function generateQuestion() {
+            const num1 = Math.floor(Math.random() * maxRange) + 1;
+            const num2 = Math.floor(Math.random() * 10) + 1;
+            currentAnswer = num1 * num2;
+            document.getElementById('questionDisplay').innerText = `${num1} × ${num2}`;
+            const input = document.getElementById('gameInput');
+            input.value = '';
+            input.focus();
+        }
+
+        // בדיקת תשובה
+        async function checkAnswer() {
+            const input = document.getElementById('gameInput');
+            const msg = document.getElementById('gameMessage');
+            const volume = document.getElementById('volumeControl').value;
+            
+            soundCorrect.volume = volume;
+            soundWrong.volume = volume;
+
+            if (input.value === "") return;
+
+            if (parseInt(input.value) === currentAnswer) {
+                score += 10;
+                document.getElementById('gameScore').innerText = `ניקוד: ${score}`;
+                msg.innerText = "נכון מאוד! ✨";
+                msg.style.color = "#27ae60";
+                soundCorrect.play().catch(e => {}); // catch למקרה שהדפדפן חוסם אודיו
+                setTimeout(generateQuestion, 800);
+            } else {
+                msg.innerText = "טעות! השיא נשמר...";
+                msg.style.color = "#e74c3c";
+                soundWrong.play().catch(e => {});
+                
+                if (score > 0) {
+                    await submitScore();
+                }
+                
+                score = 0;
+                document.getElementById('gameScore').innerText = `ניקוד: 0`;
+                setTimeout(generateQuestion, 1500);
+            }
+        }
+
+        // שמירת שיא ל-DB
+        async function submitScore() {
+            try {
+                await fetch('/.netlify/functions/scores', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        name: playerName, 
+                        score: score, 
+                        difficulty: diffLabel 
+                    })
+                });
+            } catch (err) {
+                console.error("שגיאה בשמירת שיא:", err);
+            }
+        }
+
+        // טעינת טבלת שיאים
+        async function showLeaderboard() {
+            showScreen('screen-leaderboard');
+            loadLeaderboardByDiff('medium'); // ברירת מחדל
+        }
+
+        async function loadLeaderboardByDiff(difficulty) {
+            const content = document.getElementById('leaderboardContent');
+            const diffHebrew = { 'easy': 'קל', 'medium': 'בינוני', 'hard': 'קשה' };
+            
+            content.innerHTML = `<p>טוען רמת ${diffHebrew[difficulty]}...</p>`;
+            
+            try {
+                const res = await fetch(`/.netlify/functions/scores?difficulty=${difficulty}`);
+                const data = await res.json();
+                
+                if (!data || data.length === 0) {
+                    content.innerHTML = `<p>אין שיאים עדיין ברמת ${diffHebrew[difficulty]}</p>`;
+                    return;
+                }
+
+                content.innerHTML = data.map((item, index) => {
+                    let icon = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : (index + 1) + '.';
+                    let style = index < 3 ? 'background: #fff9c4; font-weight: bold;' : '';
+                    
+                    return `
+                        <div class="score-row" style="${style}">
+                            <span>${icon} ${item.player_name}</span>
+                            <strong>${item.score}</strong>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                content.innerHTML = "<p>שגיאה בטעינת נתונים.</p>";
+            }
+        }
+
+        function confirmExit() {
+            if (score > 0) {
+                if (confirm("המשחק יופסק והניקוד לא יישמר. האם לצאת?")) {
+                    showScreen('screen-home');
+                }
+            } else {
+                showScreen('screen-home');
+            }
+        }
+
+        // האזנה למקש Enter
+        document.getElementById('gameInput').addEventListener('keypress', e => {
+            if (e.key === 'Enter') checkAnswer();
+        });
+
+        // אתחול האפליקציה בטעינה
+        window.onload = () => {
+            console.log("הממלכה מוכנה!");
+        };
+    </script>
+</body>
+</html>
